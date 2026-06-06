@@ -2,6 +2,12 @@
 
 Express + TypeScript + PostgreSQL backend for MediQueue Tutor Booking System.
 
+## 🔗 Live API
+
+**Base URL:** [https://mediqueue-server-phi.vercel.app](https://mediqueue-server-phi.vercel.app)
+
+**Health check:** [https://mediqueue-server-phi.vercel.app/api/health](https://mediqueue-server-phi.vercel.app/api/health)
+
 ## Architecture
 
 ```
@@ -69,5 +75,6 @@ npm run dev       # Start dev server
 | DELETE | /api/tutors/:id | ✅ owner | Delete |
 | POST | /api/bookings | ✅ | Book session |
 | GET | /api/bookings | ✅ | My bookings |
+| GET | /api/bookings/:id | ✅ | Single booking |
 | PATCH | /api/bookings/:id/cancel | ✅ | Cancel |
 # phero-b13-l1-a9
