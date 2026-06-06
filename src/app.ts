@@ -3,15 +3,19 @@ import express, { Application } from "express";
 import cors from "cors";
 import apiRoutes from "./routes";
 import { globalErrorHandler, notFoundHandler } from "./middleware/error.middleware";
+import { ENV } from "./config/env";
 
 const createApp = (): Application => {
   const app = express();
 
-  // CORS: credentials require an explicit origin, not a wildcard
-  const clientUrl = process.env.CLIENT_URL;
+  // CORS: use explicit origin list in production, open in development
+  const allowedOrigins = ENV.CLIENT_URL
+    ? ENV.CLIENT_URL.split(",").map((s) => s.trim())
+    : null;
+
   app.use(cors({
-    origin: clientUrl ? clientUrl.split(",").map((s) => s.trim()) : false,
-    credentials: true,
+    origin: allowedOrigins ?? "*",
+    credentials: !!allowedOrigins,
   }));
 
   app.use(express.json());

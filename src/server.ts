@@ -5,9 +5,20 @@ import { ENV } from "./config/env";
 
 const app = createApp();
 
-export default app;
+// Vercel serverless: connect DB on first request via a lightweight middleware.
+// For local dev: connect immediately and start the HTTP server.
+if (ENV.IS_PROD) {
+  let dbReady = false;
 
-if (ENV.NODE_ENV !== "production") {
+  // Prepend a one-time DB connection middleware for serverless cold starts
+  app.use(async (_req, _res, next) => {
+    if (!dbReady) {
+      await connectDB();
+      dbReady = true;
+    }
+    next();
+  });
+} else {
   const start = async () => {
     await connectDB();
     app.listen(ENV.PORT, () => {
@@ -17,3 +28,5 @@ if (ENV.NODE_ENV !== "production") {
 
   start();
 }
+
+export default app;
