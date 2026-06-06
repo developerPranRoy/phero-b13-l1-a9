@@ -1,25 +1,32 @@
 import { getPool } from "../db/pool";
+import { ENV } from "./env";
+
+let connected = false;
+
+export const resetConnection = (): void => {
+  connected = false;
+};
 
 const connectDB = async (): Promise<void> => {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is not defined in environment variables");
+  if (connected) return;
+
+  if (!ENV.DATABASE_URL) {
+    throw new Error("DATABASE_URL is not defined");
   }
 
   try {
     const pool = getPool();
     const client = await pool.connect();
-    const result = await client.query("SELECT NOW() AS now");
-    client.release();
-    console.log(` PostgreSQL connected — server time: ${result.rows[0].now}`);
-  } catch (error) {
-    console.error(" PostgreSQL connection failed:", error);
-    process.exit(1);
-  }
-};
 
-export const disconnectDB = async (): Promise<void> => {
-  await getPool().end();
-  console.log("  PostgreSQL pool closed");
+    await client.query("SELECT NOW()");
+    client.release();
+
+    connected = true;
+    console.log("PostgreSQL connected");
+  } catch (error) {
+    console.error("PostgreSQL connection failed:", error);
+    throw error;
+  }
 };
 
 export default connectDB;

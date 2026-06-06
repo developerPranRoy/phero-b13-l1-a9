@@ -1,7 +1,6 @@
 import { query } from "../db/pool";
 import { TutorFilters } from "../types";
 
-
 export interface Tutor {
   id: string;
   name: string;
@@ -21,17 +20,17 @@ export interface Tutor {
   updated_at: Date;
 }
 
-
 export const findTutors = async (
   filters: TutorFilters
-): Promise<{ tutors: Tutor[]; total: number }> => {
+): Promise<{ tutors: Tutor[]; total: number; page: number; limit: number | null }> => {
   const conditions: string[] = [];
   const params: unknown[] = [];
   let i = 1;
 
   if (filters.search) {
-    conditions.push(`name ILIKE $${i++}`);
+    conditions.push(`(name ILIKE $${i} OR subject ILIKE $${i})`);
     params.push(`%${filters.search}%`);
+    i++;
   }
 
   if (filters.startDate) {
@@ -56,20 +55,26 @@ export const findTutors = async (
   );
   const total = parseInt(countResult.rows[0].count, 10);
 
-  const limit = filters.limit ?? 20;
+  // When `all` is requested (limit === null), return every record
   const page = filters.page ?? 1;
-  const offset = (page - 1) * limit;
 
-  const dataParams = [...params, limit, offset];
+  let dataQuery: string;
+  let dataParams: unknown[];
 
-  const { rows } = await query<Tutor>(
-    `SELECT * FROM tutors ${where}
-     ORDER BY created_at DESC
-     LIMIT $${i++} OFFSET $${i++}`,
-    dataParams
-  );
+  if (filters.limit == null) {
+    // Return all records — no LIMIT / OFFSET
+    dataQuery = `SELECT * FROM tutors ${where} ORDER BY created_at DESC`;
+    dataParams = [...params];
+  } else {
+    const limit = filters.limit;
+    const offset = (page - 1) * limit;
+    dataQuery = `SELECT * FROM tutors ${where} ORDER BY created_at DESC LIMIT $${i++} OFFSET $${i++}`;
+    dataParams = [...params, limit, offset];
+  }
 
-  return { tutors: rows, total };
+  const { rows } = await query<Tutor>(dataQuery, dataParams);
+
+  return { tutors: rows, total, page, limit: filters.limit ?? null };
 };
 
 export const findTutorById = async (id: string): Promise<Tutor | null> => {
@@ -80,7 +85,9 @@ export const findTutorById = async (id: string): Promise<Tutor | null> => {
   return rows[0] ?? null;
 };
 
-export const createTutor = async (data: Omit<Tutor, "id" | "created_at" | "updated_at">): Promise<Tutor> => {
+export const createTutor = async (
+  data: Omit<Tutor, "id" | "created_at" | "updated_at">
+): Promise<Tutor> => {
   const { rows } = await query<Tutor>(
     `INSERT INTO tutors
       (name, photo, subject, available_days, available_time, hourly_fee,
@@ -116,20 +123,17 @@ export const updateTutor = async (
 };
 
 export const deleteTutor = async (id: string): Promise<boolean> => {
-  const { rowCount } = await query(
-    "DELETE FROM tutors WHERE id = $1",
-    [id]
-  );
+  const { rowCount } = await query("DELETE FROM tutors WHERE id = $1", [id]);
   return (rowCount ?? 0) > 0;
 };
 
-export const decrementSlot = async (id: string): Promise<number> => {
+export const incrementSlot = async (id: string): Promise<number> => {
   const { rows } = await query<{ total_slot: number }>(
-    `UPDATE tutors SET total_slot = total_slot - 1
-     WHERE id = $1 AND total_slot > 0
+    `UPDATE tutors SET total_slot = total_slot + 1
+     WHERE id = $1
      RETURNING total_slot`,
     [id]
   );
-  if (!rows[0]) throw new Error("No available slots or tutor not found");
+  if (!rows[0]) throw new Error("Tutor not found");
   return rows[0].total_slot;
 };

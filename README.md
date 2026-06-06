@@ -53,11 +53,6 @@ npm run dev       # Start dev server
 
 ## DATABASE_URL format
 
-```
-postgresql://USER:PASSWORD@HOST:5432/mediqueue
-# Neon / Supabase:
-postgresql://user:pass@ep-xxx.us-east-1.aws.neon.tech/mediqueue?sslmode=require
-```
 
 ## API Endpoints
 

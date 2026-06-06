@@ -1,31 +1,6 @@
 import { query } from "../db/pool";
 import { Booking } from "../types";
 
-
-
-export const createBooking = async (data: {
-  tutor_id: string;
-  tutor_name: string;
-  student_name: string;
-  student_email: string;
-  phone: string;
-}): Promise<Booking> => {
-  const { rows } = await query<Booking>(
-    `INSERT INTO bookings
-      (tutor_id, tutor_name, student_name, student_email, phone)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING *`,
-    [
-      data.tutor_id,
-      data.tutor_name,
-      data.student_name,
-      data.student_email.toLowerCase(),
-      data.phone,
-    ]
-  );
-  return rows[0];
-};
-
 export const findBookingsByEmail = async (email: string): Promise<Booking[]> => {
   const { rows } = await query<Booking>(
     `SELECT * FROM bookings

@@ -25,14 +25,12 @@ export interface Booking {
   updated_at: Date;
 }
 
-
-
 export interface TutorFilters {
   search?: string;
   startDate?: string;
   endDate?: string;
   createdBy?: string;
-  limit?: number;
+  /** Pass null to return all records without pagination */
+  limit?: number | null;
   page?: number;
 }
-
